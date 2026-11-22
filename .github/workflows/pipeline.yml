@@ -1,47 +1,37 @@
-name: pipeline
+name: Pantry pipeline
 
 on:
   push:
-    branches: [main]
+    branches: [ "main" ]
   pull_request:
-    branches: [main]
+    branches: [ "main" ]
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Check out code
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
-      - name: Run tests
+      - name: Run the tests
         shell: bash
-        run: |
-          python -m unittest discover -s tests -v 2>&1 | tee test-results.txt
-
-      - name: Write test results to run summary
+        run: python -m unittest discover -s tests -p "*_test.py" -v 2>&1 | tee test-report.txt
+      - name: Show the test report on the run page
         if: always()
-        shell: bash
         run: |
-          echo "## Test results" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-          cat test-results.txt >> "$GITHUB_STEP_SUMMARY" || echo "No test output found." >> "$GITHUB_STEP_SUMMARY"
+          cat test-report.txt >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Build dist folder
-        shell: bash
+      - name: Build the package
         run: |
+          echo "Built from commit $GITHUB_SHA" > dist/BUILD_INFO.txt
           mkdir -p dist
           cp app/*.py dist/
-          echo "Commit: ${{ github.sha }}" > dist/BUILD_INFO.txt
-
-      - name: Upload artifact
+      - name: Upload the build artifact
         uses: actions/upload-artifact@v4
         with:
           name: pantry-app
-          path: dist
+          path: dist/
+          if-no-files-found: error
