@@ -17,13 +17,17 @@ jobs:
           python-version: "3.12"
       - name: Run the tests
         shell: bash
-        run: python -m unittest discover -s tests -p "test_*.py" -v 2>&1 | tee test-report.txt
+        run: python -m unittest discover -s tests -v 2>&1 | tee test-report.txt
       - name: Show the test report on the run page
         if: always()
         run: |
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           cat test-report.txt >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
+      - name: Check the open slots
+        run: python scripts/signup_check.py slots
+      - name: Check the waitlist
+        run: python scripts/signup_check.py waitlist
       - name: Build the package
         run: |
           mkdir -p dist
